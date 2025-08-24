@@ -1,4 +1,3 @@
-<!-- resources/views/products/edit.blade.php -->
 @extends('layouts.app')
 
 @section('content')
@@ -39,6 +38,17 @@
                             <div class="col-md-6">
                                 <input id="stock" type="number" class="form-control @error('stock') is-invalid @enderror" name="stock" value="{{ old('stock', $product->stock) ?? 0 }}" required min="0">
                                 @error('stock')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="price" class="col-md-4 col-form-label text-md-right">{{ __('Harga') }}</label>
+                            <div class="col-md-6">
+                                <input id="price" type="number" step="0.01" class="form-control @error('price') is-invalid @enderror" name="price" value="{{ old('price', $product->price) }}" required min="0">
+                                @error('price')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>

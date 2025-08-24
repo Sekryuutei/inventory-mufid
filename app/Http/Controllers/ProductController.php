@@ -24,12 +24,14 @@ class ProductController extends Controller
             'nameProduct' => 'required|string|max:255',
             'description' => 'nullable|string',
             'stock' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0', // Tambahkan validasi harga
         ]);
 
         Product::create([
             'name' => $request->nameProduct,
             'description' => $request->description,
             'stock' => $request->stock,
+            'price' => $request->price, // Tambahkan harga
         ]);
 
         return redirect()->route('products.index')
@@ -52,12 +54,14 @@ class ProductController extends Controller
             'nameProduct' => 'required|string|max:255',
             'description' => 'nullable|string',
             'stock' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0', // Tambahkan validasi harga
         ]);
 
         $product->update([
             'name' => $request->nameProduct,
             'description' => $request->description,
             'stock' => $request->stock,
+            'price' => $request->price, // Tambahkan harga
         ]);
 
         return redirect()->route('products.index')

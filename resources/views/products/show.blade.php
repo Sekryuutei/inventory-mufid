@@ -39,6 +39,14 @@
                     </div>
 
                     <div class="form-group row">
+                        <label for="price" class="col-md-4 col-form-label text-md-right">{{ __('Harga') }}</label>
+
+                        <div class="col-md-6">
+                            <p class="form-control-plaintext">Rp {{ number_format($product->price, 2, ',', '.') }}</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
                         <label class="col-md-4 col-form-label text-md-right">{{ __('Dibuat pada') }}</label>
 
                         <div class="col-md-6">

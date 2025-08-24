@@ -38,6 +38,7 @@ class InventoryTransactionController extends Controller
             'type' => 'required|in:in,out',
             'quantity' => 'required|integer|min:1',
             'notes' => 'nullable|string|max:500',
+            'transaction_date' => 'required|date',
         ]);
 
         // Gunakan transaction database untuk memastikan konsistensi data
@@ -48,7 +49,7 @@ class InventoryTransactionController extends Controller
                 'type' => $validated['type'],
                 'quantity' => $validated['quantity'],
                 'notes' => $validated['notes'],
-                'transaction_date' => now(), // Gunakan waktu saat ini
+                'transaction_date' => $validated['transaction_date'], 
             ]);
 
             // Update stok produk
@@ -94,6 +95,7 @@ class InventoryTransactionController extends Controller
             'type' => 'required|in:in,out',
             'quantity' => 'required|integer|min:1',
             'notes' => 'nullable|string|max:500',
+            'transaction_date' => 'required|date',
         ]);
 
         // Gunakan transaction database untuk memastikan konsistensi data
@@ -118,6 +120,7 @@ class InventoryTransactionController extends Controller
                 'type' => $validated['type'],
                 'quantity' => $validated['quantity'],
                 'notes' => $validated['notes'],
+                'transaction_date' => $validated['transaction_date'],
             ]);
             
             // Update stok produk baru

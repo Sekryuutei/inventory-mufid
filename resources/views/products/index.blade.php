@@ -18,6 +18,7 @@
                 <th>ID</th>
                 <th>Name</th>
                 <th>Stock</th>
+                <th>Price</th>
                 <th>Description</th>
                 <th>Actions</th>
             </tr>
@@ -28,6 +29,7 @@
                 <td>{{ $product->id }}</td>
                 <td>{{ $product->name }}</td>
                 <td>{{ $product->stock }}</td>
+                <td>Rp {{ number_format($product->price, 2, ',', '.') }}</td>
                 <td>{{ $product->description }}</td>
                 <td>
                     <a href="{{ route('products.show', $product->id) }}" class="btn btn-info">View</a>

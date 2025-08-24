@@ -17,9 +17,9 @@ class InventoryTransaction extends Model
         'transaction_date'
     ];
 
-    protected $casts = [
-        'transaction_date' => 'datetime' // Tambahkan ini
-    ];
+protected $casts = [
+    'transaction_date' => 'datetime'
+];
 
     public function product()
     {
