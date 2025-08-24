@@ -2,7 +2,7 @@
     "version": 2,
     "framework": null,
     "functions": {
-        "api/index.php": { "runtime": "vercel-php@0.6.0" }
+        "api/index.php": { "runtime": "vercel-php@0.7.1" }
     },
     "routes": [
         { "src": "/build/(.*)", "dest": "/public/build/" },
@@ -10,6 +10,7 @@
     ],
     "public": true,
     "buildCommand": "vite build",
+    "outputDirectory": "public",
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "false",
@@ -21,7 +22,7 @@
         "APP_ROUTES_CACHE": "/tmp/routes.php",
         "APP_SERVICES_CACHE": "/tmp/services.php",
         "VIEW_COMPILED_PATH": "/tmp",
-
+        
         "CACHE_DRIVER": "array",
         "LOG_CHANNEL": "stderr",
         "SESSION_DRIVER": "cookie",
@@ -32,5 +33,4 @@
         "DB_DATABASE": "db2024_stormtorn",
         "DB_USERNAME": "db2024_stormtorn"
     },
-    "outputDirectory": "public"
 }
