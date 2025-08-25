@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\InventoryTransaction;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 
 class InventoryTransactionController extends Controller
@@ -41,31 +42,25 @@ class InventoryTransactionController extends Controller
             'transaction_date' => 'required|date',
         ]);
 
-        // Gunakan transaction database untuk memastikan konsistensi data
-        DB::transaction(function () use ($validated, $request) {
-            // Buat transaksi inventory
-            $transaction = InventoryTransaction::create([
-                'product_id' => $validated['product_id'],
-                'type' => $validated['type'],
-                'quantity' => $validated['quantity'],
-                'notes' => $validated['notes'],
-                'transaction_date' => $validated['transaction_date'], 
-            ]);
-
-            // Update stok produk
-            $product = Product::find($validated['product_id']);
+        DB::transaction(function () use ($validated) {
+            $product = Product::lockForUpdate()->findOrFail($validated['product_id']);
             
             if ($validated['type'] === 'in') {
                 $product->stock += $validated['quantity'];
             } else {
                 // Validasi stok cukup untuk transaksi keluar
                 if ($product->stock < $validated['quantity']) {
-                    throw new \Exception('Stok tidak mencukupi untuk transaksi keluar');
+                    throw ValidationException::withMessages([
+                        'quantity' => 'Stok produk tidak mencukupi. Stok saat ini: ' . $product->stock,
+                    ]);
                 }
                 $product->stock -= $validated['quantity'];
             }
             
             $product->save();
+
+            // Buat transaksi inventory
+            InventoryTransaction::create($validated);
         });
 
         return redirect()->route('inventory.index')
@@ -87,8 +82,6 @@ class InventoryTransactionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $transaction = InventoryTransaction::findOrFail($id);
-        
         // Validasi data
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
@@ -98,45 +91,52 @@ class InventoryTransactionController extends Controller
             'transaction_date' => 'required|date',
         ]);
 
-        // Gunakan transaction database untuk memastikan konsistensi data
+        $transaction = InventoryTransaction::findOrFail($id);
+
         DB::transaction(function () use ($validated, $transaction) {
-            // Simpan quantity lama untuk revert stok
             $oldQuantity = $transaction->quantity;
             $oldType = $transaction->type;
             $oldProductId = $transaction->product_id;
+            $newProductId = $validated['product_id'];
+
+            // Kunci baris produk yang terlibat untuk mencegah race condition.
+            // Urutkan ID untuk mencegah deadlock.
+            $productIds = array_unique([$oldProductId, $newProductId]);
+            sort($productIds);
+            $products = Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
+
+            $oldProduct = $products[$oldProductId];
             
-            // Revert stok produk lama
-            $oldProduct = Product::find($oldProductId);
+            // 1. Kembalikan stok dari transaksi lama
             if ($oldType === 'in') {
                 $oldProduct->stock -= $oldQuantity;
             } else {
                 $oldProduct->stock += $oldQuantity;
             }
-            $oldProduct->save();
-            
-            // Update transaksi
-            $transaction->update([
-                'product_id' => $validated['product_id'],
-                'type' => $validated['type'],
-                'quantity' => $validated['quantity'],
-                'notes' => $validated['notes'],
-                'transaction_date' => $validated['transaction_date'],
-            ]);
-            
-            // Update stok produk baru
-            $newProduct = Product::find($validated['product_id']);
-            
+
+            // Jika produknya diubah, simpan perubahan stok produk lama terlebih dahulu.
+            if ($oldProductId != $newProductId) {
+                $oldProduct->save();
+            }
+
+            $newProduct = $products[$newProductId];
+
+            // 2. Terapkan perubahan stok untuk transaksi baru
             if ($validated['type'] === 'in') {
                 $newProduct->stock += $validated['quantity'];
             } else {
-                // Validasi stok cukup untuk transaksi keluar
                 if ($newProduct->stock < $validated['quantity']) {
-                    throw new \Exception('Stok tidak mencukupi untuk transaksi keluar');
+                    throw ValidationException::withMessages([
+                        'quantity' => 'Stok produk tidak mencukupi. Stok saat ini: ' . $newProduct->stock,
+                    ]);
                 }
                 $newProduct->stock -= $validated['quantity'];
             }
             
             $newProduct->save();
+
+            // 3. Perbarui detail transaksi
+            $transaction->update($validated);
         });
 
         return redirect()->route('inventory.index')
@@ -158,22 +158,30 @@ class InventoryTransactionController extends Controller
     {
         $transaction = InventoryTransaction::findOrFail($id);
         
-        // Gunakan transaction database untuk memastikan konsistensi data
-        DB::transaction(function () use ($transaction) {
-            // Revert stok produk sebelum menghapus transaksi
-            $product = Product::find($transaction->product_id);
-            
-            if ($transaction->type === 'in') {
-                $product->stock -= $transaction->quantity;
-            } else {
-                $product->stock += $transaction->quantity;
-            }
-            
-            $product->save();
-            
-            // Hapus transaksi
-            $transaction->delete();
-        });
+        try {
+            DB::transaction(function () use ($transaction) {
+                // Kunci produk untuk update dan revert stok
+                $product = Product::lockForUpdate()->findOrFail($transaction->product_id);
+                
+                if ($transaction->type === 'in') {
+                    // Pastikan stok tidak menjadi negatif setelah revert
+                    if ($product->stock < $transaction->quantity) {
+                        throw new \Exception('Gagal menghapus transaksi karena akan menghasilkan stok negatif.');
+                    }
+                    $product->stock -= $transaction->quantity;
+                } else {
+                    $product->stock += $transaction->quantity;
+                }
+                
+                $product->save();
+                
+                // Hapus transaksi
+                $transaction->delete();
+            });
+        } catch (\Exception $e) {
+            return redirect()->route('inventory.index')
+                ->with('error', $e->getMessage());
+        }
 
         return redirect()->route('inventory.index')
             ->with('success', 'Transaksi berhasil dihapus.');
