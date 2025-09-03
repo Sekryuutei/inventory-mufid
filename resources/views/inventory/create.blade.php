@@ -15,8 +15,7 @@
                     <div class="mb-3">
                         <label for="transaction_date" class="form-label">Tanggal Transaksi</label>
                         <input type="datetime-local" class="form-control @error('transaction_date') is-invalid @enderror"
-                            id="transaction_date" name="transaction_date"
-                            value="{{ old('transaction_date', now()->format('Y-m-d\TH:i')) }}" required>
+                            id="transaction_date" name="transaction_date" value="{{ old('transaction_date') }}" required>
                         @error('transaction_date')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -52,9 +51,13 @@
 
                     <div class="mb-3">
                         <label for="quantity" class="form-label">Jumlah</label>
-                        <input type="number" class="form-control @error('quantity') is-invalid @enderror" id="quantity" name="quantity" value="{{ old('quantity', 1) }}" required min="1">
+                        <div class="input-group">
+                            <button class="btn btn-outline-secondary" type="button" id="quantity-minus">-</button>
+                            <input type="number" class="form-control text-center @error('quantity') is-invalid @enderror" id="quantity" name="quantity" value="{{ old('quantity', 1) }}" required min="1">
+                            <button class="btn btn-outline-secondary" type="button" id="quantity-plus">+</button>
+                        </div>
                         @error('quantity')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
 
@@ -114,9 +117,33 @@
     // Tambahan: Trigger event saat halaman pertama kali dimuat
     // untuk menangani kasus produk sudah terpilih dari QR code atau error validasi
     document.addEventListener('DOMContentLoaded', function() {
+        // --- 1. Set Tanggal & Waktu Lokal Saat Ini ---
+        const dateInput = document.getElementById('transaction_date');
+        // Hanya set jika tidak ada value dari old() saat validasi gagal
+        if (!dateInput.value) {
+            const now = new Date();
+            // Sesuaikan dengan timezone lokal pengguna
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            // Format ke YYYY-MM-DDTHH:mm yang diterima input datetime-local
+            dateInput.value = now.toISOString().slice(0, 16);
+        }
+
+        // --- 2. Trigger validasi stok jika produk sudah terpilih ---
         if (document.getElementById('product_id').value) {
             document.getElementById('type').dispatchEvent(new Event('change'));
         }
+
+        // --- 3. Fungsionalitas Tombol Tambah & Kurang Jumlah ---
+        const quantityInput = document.getElementById('quantity');
+        document.getElementById('quantity-minus').addEventListener('click', function() {
+            let currentValue = parseInt(quantityInput.value, 10);
+            if (currentValue > 1) { // Menghormati atribut min="1"
+                quantityInput.value = currentValue - 1;
+            }
+        });
+        document.getElementById('quantity-plus').addEventListener('click', function() {
+            quantityInput.value = parseInt(quantityInput.value, 10) + 1;
+        });
     });
 </script>
 @endsection

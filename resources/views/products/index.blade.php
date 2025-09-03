@@ -31,14 +31,15 @@
                 <td>{{ $product->stock }}</td>
                 <td>Rp {{ number_format($product->price, 2, ',', '.') }}</td>
                 <td>{{ $product->description }}</td>
-                <td>
+                <td class="text-nowrap">
                     <a href="{{ route('products.show', $product->id) }}" class="btn btn-info">View</a>
                     <a href="{{ route('products.edit', $product->id) }}" class="btn btn-warning">Edit</a>
-                    <form action="{{ route('products.destroy', $product->id) }}" method="POST" style="display:inline">
+                    <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk ini?');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger">Delete</button>
-                    </form><a href="{{ route('products.qrcode', $product->id) }}" class="btn btn-sm btn-info" title="Tampilkan QR Code">
+                    </form>
+                    <a href="{{ route('products.qrcode', $product->id) }}" class="btn btn-secondary" title="Tampilkan QR Code">
                         <i class="bi bi-qr-code"></i>
                     </a>
                 </td>
