@@ -34,18 +34,12 @@
             // Hentikan pemindaian
             html5QrcodeScanner.clear();
 
-            // Validasi sederhana untuk memastikan hasil pindaian adalah angka
-            if (isNaN(parseInt(decodedText))) {
-                resultContainer.innerHTML = `<div class="alert alert-danger">QR Code tidak valid.</div>`;
-                return;
-            }
-
             // Tampilkan pesan dan redirect
             resultContainer.innerHTML = `<div class="alert alert-success">QR Code berhasil dipindai! Mengarahkan...</div>`;
 
             // Bangun URL tujuan secara manual menggunakan route dari Laravel
             const baseUrl = "{{ route('inventory.create') }}";
-            const redirectUrl = `${baseUrl}?product_id=${decodedText}`;
+            const redirectUrl = `${baseUrl}?product_uuid=${decodedText}`;
 
             // Arahkan ke URL yang sudah dibangun
             window.location.href = redirectUrl;
