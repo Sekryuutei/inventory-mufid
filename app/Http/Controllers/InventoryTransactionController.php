@@ -13,10 +13,52 @@ class InventoryTransactionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $transactions = InventoryTransaction::with('product')->latest()->paginate(15);
-        return view('inventory.index', compact('transactions'));
+        // Ambil semua produk untuk filter dropdown
+        $products = Product::orderBy('name')->get();
+
+        // Query dasar
+        $query = InventoryTransaction::with('product');
+
+        // Terapkan filter
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+        if ($request->filled('start_date')) {
+            $query->whereDate('transaction_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('transaction_date', '<=', $request->end_date);
+        }
+
+        // Hitung total nilai berdasarkan query yang sudah difilter, sebelum paginasi.
+        // Clone query agar filter tetap ada, tetapi tidak mempengaruhi query utama.
+        $totalPenjualanQuery = clone $query;
+        $totalPenjualan = $totalPenjualanQuery
+            ->where('type', 'out') // Hanya transaksi keluar
+            ->join('products', 'inventory_transactions.product_id', '=', 'products.id')
+            ->sum(DB::raw('inventory_transactions.quantity * products.price'));
+
+        $totalPembelianQuery = clone $query;
+        $totalPembelian = $totalPembelianQuery
+            ->where('type', 'in') // Hanya transaksi masuk
+            ->join('products', 'inventory_transactions.product_id', '=', 'products.id')
+            ->sum(DB::raw('inventory_transactions.quantity * products.price'));
+
+        // Urutkan dan paginasi, serta pertahankan query string filter
+        $transactions = $query->orderBy('id', 'asc')->paginate(15)->appends($request->query());
+
+        return view('inventory.index', [
+            'transactions' => $transactions,
+            'products' => $products,
+            'filters' => $request->all(), // Kirim filter kembali ke view
+            'totalPenjualan' => $totalPenjualan,
+            'totalPembelian' => $totalPembelian,
+        ]);
     }
 
     /**
@@ -188,5 +230,13 @@ class InventoryTransactionController extends Controller
 
         return redirect()->route('inventory.index')
             ->with('success', 'Transaksi berhasil dihapus.');
+    }
+
+    /**
+     * Show the QR code scanner page.
+     */
+    public function scanQr()
+    {
+        return view('inventory.scan');
     }
 }

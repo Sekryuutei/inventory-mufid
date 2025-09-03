@@ -25,6 +25,7 @@ Route::middleware(['auth'])->group(function () {
 
     // --- FITUR INVENTARIS (Bisa diakses semua role yang login) ---
     Route::resource('inventory', InventoryTransactionController::class)->except(['show']);
+    Route::get('/scan-qr', [InventoryTransactionController::class, 'scanQr'])->name('inventory.scan');
     Route::get('/inventory/{id}/confirm-delete', [InventoryTransactionController::class, 'confirmDelete'])->name('inventory.confirm-delete');
     Route::get('/inventory/{id}/edit', [InventoryTransactionController::class, 'edit'])->name('inventory.edit');
     

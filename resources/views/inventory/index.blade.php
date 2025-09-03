@@ -1,76 +1,143 @@
 @extends('layouts.app')
 
-@section('title', 'Riwayat Transaksi - Drass Bird Shop')
+@section('title', 'Riwayat Transaksi')
 
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2 class="mb-0">Riwayat Transaksi Stok</h2>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Riwayat Transaksi</h1>
+        <div>
+            <a href="{{ route('inventory.scan') }}" class="btn btn-info">
+                <i class="bi bi-qr-code-scan"></i> Pindai QR
+            </a>
             <a href="{{ route('inventory.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle-fill me-1"></i>
-                Tambah Transaksi
+                <i class="bi bi-plus-circle"></i> Tambah Transaksi
             </a>
         </div>
     </div>
-    <div class="card-body">
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
 
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Tanggal</th>
-                        <th scope="col">Produk</th>
-                        <th scope="col">Tipe</th>
-                        <th scope="col">Jumlah</th>
-                        <th scope="col">Catatan</th>
-                        <th scope="col">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($transactions as $transaction)
+    @if (session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    {{-- Ringkasan Total Sesuai Filter --}}
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">Total Nilai Keluar (Penjualan)</h5>
+                    <p class="card-text fs-4 fw-bold">Rp {{ number_format($totalPenjualan, 0, ',', '.') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Total Nilai Masuk (Pembelian)</h5>
+                    <p class="card-text fs-4 fw-bold">Rp {{ number_format($totalPembelian, 0, ',', '.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Filter Form --}}
+    <div class="card mb-4">
+        <div class="card-header">Filter Transaksi</div>
+        <div class="card-body">
+            <form action="{{ route('inventory.index') }}" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="product_id" class="form-label">Produk</label>
+                    <select name="product_id" id="product_id" class="form-select">
+                        <option value="">Semua Produk</option>
+                        @foreach($products as $product)
+                            <option value="{{ $product->id }}" {{ (isset($filters['product_id']) && $filters['product_id'] == $product->id) ? 'selected' : '' }}>
+                                {{ $product->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="type" class="form-label">Tipe</label>
+                    <select name="type" id="type" class="form-select">
+                        <option value="">Semua Tipe</option>
+                        <option value="in" {{ (isset($filters['type']) && $filters['type'] == 'in') ? 'selected' : '' }}>Masuk</option>
+                        <option value="out" {{ (isset($filters['type']) && $filters['type'] == 'out') ? 'selected' : '' }}>Keluar</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Dari Tanggal</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ $filters['start_date'] ?? '' }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="end_date" class="form-label">Sampai Tanggal</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ $filters['end_date'] ?? '' }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </div>
+                <div class="col-auto">
+                    <a href="{{ route('inventory.index') }}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Transactions Table --}}
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
                         <tr>
-                            <th scope="row">{{ $transactions->firstItem() + $loop->index }}</th>
-                            <td>{{ \Carbon\Carbon::parse($transaction->transaction_date)->isoFormat('D MMM YYYY, HH:mm') }}</td>
-                            <td>{{ $transaction->product->name }}</td>
+                            <th>ID</th>
+                            <th>Produk</th>
+                            <th>Tipe</th>
+                            <th class="text-end">Jumlah</th>
+                            <th class="text-end">Harga Satuan</th>
+                            <th class="text-end">Total Harga</th>
+                            <th>Tanggal</th>
+                            <th>Catatan</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($transactions as $transaction)
+                        <tr>
+                            <td>{{ $transaction->id }}</td>
+                            <td>{{ $transaction->product->name ?? 'N/A' }}</td>
                             <td>
                                 @if ($transaction->type == 'in')
-                                    <span class="badge text-bg-success"><i class="bi bi-arrow-down-circle me-1"></i> Masuk</span>
+                                    <span class="badge bg-success">Masuk</span>
                                 @else
-                                    <span class="badge text-bg-danger"><i class="bi bi-arrow-up-circle me-1"></i> Keluar</span>
+                                    <span class="badge bg-danger">Keluar</span>
                                 @endif
                             </td>
-                            <td>{{ $transaction->quantity }}</td>
-                            <td>{{ $transaction->notes ?? '-' }}</td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{{ route('inventory.edit', $transaction->id) }}" class="btn btn-sm btn-warning">
-                                        <i class="bi bi-pencil"></i> Edit
-                                    </a>
-                                    <a href="{{ route('inventory.confirm-delete', $transaction->id) }}" class="btn btn-sm btn-danger">
-                                        <i class="bi bi-trash"></i> Hapus
-                                    </a>
-                                </div>
+                            <td class="text-end">{{ $transaction->quantity }}</td>
+                            <td class="text-end">Rp {{ number_format($transaction->product->price ?? 0, 0, ',', '.') }}</td>
+                            <td class="text-end fw-bold">Rp {{ number_format($transaction->quantity * ($transaction->product->price ?? 0), 0, ',', '.') }}</td>
+                            <td>{{ \Carbon\Carbon::parse($transaction->transaction_date)->format('d M Y, H:i') }}</td>
+                            <td>{{ $transaction->notes ?: '-' }}</td>
+                            <td class="text-nowrap text-end">
+                                <a href="{{ route('inventory.edit', $transaction->id) }}" class="btn btn-sm btn-warning">Edit</a>
+                                <a href="{{ route('inventory.confirm-delete', $transaction->id) }}" class="btn btn-sm btn-danger">Hapus</a>
                             </td>
                         </tr>
-                    @empty
+                        @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted">Belum ada data transaksi.</td>
+                            <td colspan="9" class="text-center py-4">Tidak ada data transaksi yang cocok dengan filter.</td>
                         </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="mt-3">
-            {{ $transactions->links() }}
-        </div>
+    </div>
+
+    <div class="mt-4">
+        {{ $transactions->links() }}
     </div>
 </div>
 @endsection

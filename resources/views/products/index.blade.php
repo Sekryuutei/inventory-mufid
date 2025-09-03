@@ -2,9 +2,15 @@
 
 @section('content')
 <div class="container">
-    <h1>Products</h1>
-    
-    <a href="{{ route('products.create') }}" class="btn btn-primary mb-3">Add New Product</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Kelola Produk</h1>
+        <div>
+            <a href="{{ route('inventory.scan') }}" class="btn btn-info">
+                <i class="bi bi-qr-code-scan"></i> Pindai QR
+            </a>
+            <a href="{{ route('products.create') }}" class="btn btn-primary">Tambah Produk Baru</a>
+        </div>
+    </div>
 
     @if (session('success'))
         <div class="alert alert-success">
@@ -12,15 +18,18 @@
         </div>
     @endif
 
-    <table class="table table-bordered">
-        <thead>
+    <div class="card">
+    <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+        <thead class="table-dark">
             <tr>
                 <th>ID</th>
-                <th>Name</th>
-                <th>Stock</th>
-                <th>Price</th>
-                <th>Description</th>
-                <th>Actions</th>
+                <th>Nama</th>
+                <th class="text-end">Stok</th>
+                <th class="text-end">Harga Satuan</th>
+                <th class="text-end">Total Harga Stok</th>
+                <th>Deskripsi</th>
+                <th class="text-end">Aksi</th>
             </tr>
         </thead>
         <tbody>
@@ -28,10 +37,11 @@
             <tr>
                 <td>{{ $product->id }}</td>
                 <td>{{ $product->name }}</td>
-                <td>{{ $product->stock }}</td>
-                <td>Rp {{ number_format($product->price, 2, ',', '.') }}</td>
+                <td class="text-end">{{ $product->stock }}</td>
+                <td class="text-end">Rp {{ number_format($product->price, 0, ',', '.') }}</td>
+                <td class="text-end fw-bold">Rp {{ number_format($product->stock * $product->price, 0, ',', '.') }}</td>
                 <td>{{ $product->description }}</td>
-                <td class="text-nowrap">
+                <td class="text-nowrap text-end">
                     <a href="{{ route('products.show', $product->id) }}" class="btn btn-info">View</a>
                     <a href="{{ route('products.edit', $product->id) }}" class="btn btn-warning">Edit</a>
                     <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk ini?');">
@@ -47,7 +57,9 @@
             @endforeach
         </tbody>
     </table>
+    </div>
+    </div>
 
-    {{ $products->links() }}
+    <div class="mt-4">{{ $products->links() }}</div>
 </div>
 @endsection
