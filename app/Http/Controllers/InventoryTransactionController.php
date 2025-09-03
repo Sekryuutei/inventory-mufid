@@ -67,9 +67,16 @@ class InventoryTransactionController extends Controller
     public function create(Request $request)
     {
         $products = Product::orderBy('name')->get();
-        // Ambil product_id dari query string URL
-        $selectedProductId = $request->query('product_id');
+        $selectedProductId = null;
 
+        // Cari produk berdasarkan UUID dari hasil scan QR code
+        if ($request->has('product_uuid')) {
+            $product = Product::where('uuid', $request->query('product_uuid'))->first();
+            if ($product) {
+                $selectedProductId = $product->id;
+            }
+        }
+        
         return view('inventory.create', compact('products', 'selectedProductId'));
     }
 

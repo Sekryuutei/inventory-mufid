@@ -25,19 +25,30 @@
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const resultContainer = document.getElementById('qr-reader-results');
+
         function onScanSuccess(decodedText, decodedResult) {
-            // decodedText berisi URL dari QR code
-            console.log(`Scan result: ${decodedText}`, decodedResult);
+            // decodedText sekarang berisi ID produk (contoh: "5")
+            console.log(`Hasil Pindai: ${decodedText}`);
 
             // Hentikan pemindaian
             html5QrcodeScanner.clear();
 
+            // Validasi sederhana untuk memastikan hasil pindaian adalah angka
+            if (isNaN(parseInt(decodedText))) {
+                resultContainer.innerHTML = `<div class="alert alert-danger">QR Code tidak valid.</div>`;
+                return;
+            }
+
             // Tampilkan pesan dan redirect
-            const resultContainer = document.getElementById('qr-reader-results');
             resultContainer.innerHTML = `<div class="alert alert-success">QR Code berhasil dipindai! Mengarahkan...</div>`;
 
-            // Redirect ke URL yang ada di QR code
-            window.location.href = decodedText;
+            // Bangun URL tujuan secara manual menggunakan route dari Laravel
+            const baseUrl = "{{ route('inventory.create') }}";
+            const redirectUrl = `${baseUrl}?product_id=${decodedText}`;
+
+            // Arahkan ke URL yang sudah dibangun
+            window.location.href = redirectUrl;
         }
 
         let html5QrcodeScanner = new Html5QrcodeScanner(
@@ -45,7 +56,12 @@
             { fps: 10, qrbox: { width: 250, height: 250 } },
             /* verbose= */ false
         );
-        html5QrcodeScanner.render(onScanSuccess, (error) => {});
+
+        function onScanFailure(error) {
+            // Tidak melakukan apa-apa saat gagal memindai, agar tidak ada log yang mengganggu
+        }
+
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
     });
 </script>
 @endpush

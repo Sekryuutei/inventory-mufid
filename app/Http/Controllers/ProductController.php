@@ -79,13 +79,11 @@ class ProductController extends Controller
 
     public function qrcode(Product $product)
     {
-        // URL ini akan mengarahkan ke halaman pembuatan transaksi inventaris
-        // dengan produk yang sudah dipilih sebelumnya.
-        $url = route('inventory.create', ['product_id' => $product->id]);
+        // QR code sekarang akan berisi UUID produk yang unik dan aman.
+        $productUuid = $product->uuid;
 
         // Generate QR code
-        // Anda bisa menyesuaikan ukuran (size) sesuai kebutuhan
-        $qrCode = QrCode::size(250)->generate($url);
+        $qrCode = QrCode::size(250)->generate($productUuid);
 
         return view('products.qrcode', compact('product', 'qrCode'));
     }
