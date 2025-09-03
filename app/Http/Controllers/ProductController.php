@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
@@ -74,5 +75,18 @@ class ProductController extends Controller
 
         return redirect()->route('products.index')
             ->with('success', 'Product deleted successfully.');
+    }
+
+    public function qrcode(Product $product)
+    {
+        // URL ini akan mengarahkan ke halaman pembuatan transaksi inventaris
+        // dengan produk yang sudah dipilih sebelumnya.
+        $url = route('inventory.create', ['product_id' => $product->id]);
+
+        // Generate QR code
+        // Anda bisa menyesuaikan ukuran (size) sesuai kebutuhan
+        $qrCode = QrCode::size(250)->generate($url);
+
+        return view('products.qrcode', compact('product', 'qrCode'));
     }
 }

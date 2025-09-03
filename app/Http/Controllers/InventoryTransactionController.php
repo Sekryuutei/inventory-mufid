@@ -22,10 +22,13 @@ class InventoryTransactionController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         $products = Product::orderBy('name')->get();
-        return view('inventory.create', compact('products'));
+        // Ambil product_id dari query string URL
+        $selectedProductId = $request->query('product_id');
+
+        return view('inventory.create', compact('products', 'selectedProductId'));
     }
 
     /**

@@ -38,7 +38,9 @@
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
+                    </form><a href="{{ route('products.qrcode', $product->id) }}" class="btn btn-sm btn-info" title="Tampilkan QR Code">
+                        <i class="bi bi-qr-code"></i>
+                    </a>
                 </td>
             </tr>
             @endforeach

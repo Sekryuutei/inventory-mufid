@@ -31,6 +31,7 @@ Route::middleware(['auth'])->group(function () {
     // --- FITUR KELOLA PRODUK (Hanya Admin & Manager) ---
     Route::middleware(['check.role:admin,manager'])->group(function () {
         Route::resource('products', ProductController::class);
+        Route::get('/products/{product}/qrcode', [ProductController::class, 'qrcode'])->name('products.qrcode');
     });
 
     // --- FITUR KELOLA PENGGUNA (Hanya Admin) ---
