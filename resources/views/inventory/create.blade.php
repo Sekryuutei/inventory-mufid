@@ -24,9 +24,12 @@
                     <div class="mb-3">
                         <label for="product_id" class="form-label">Produk</label>
                         <select class="form-select @error('product_id') is-invalid @enderror" id="product_id" name="product_id" required>
-                            <option value="" disabled selected>Pilih Produk...</option>
+                            {{-- Opsi placeholder, terpilih jika tidak ada produk yang dipilih dari QR atau validasi lama --}}
+                            <option value="" disabled {{ old('product_id', $selectedProductId ?? null) ? '' : 'selected' }}>Pilih Produk...</option>
                             @foreach ($products as $product)
-                            <option value="{{ $product->id }}" {{ old('product_id') == $product->id ? 'selected' : '' }}>
+                            {{-- Cek old('product_id') dulu (jika ada error validasi), baru cek $selectedProductId (dari QR) --}}
+                            <option value="{{ $product->id }}"
+                                {{ (old('product_id', $selectedProductId ?? null) == $product->id) ? 'selected' : '' }}>
                                 {{ $product->name }} (Stok: {{ $product->stock }})
                             </option>
                             @endforeach
@@ -49,7 +52,7 @@
 
                     <div class="mb-3">
                         <label for="quantity" class="form-label">Jumlah</label>
-                        <input type="number" class="form-control @error('quantity') is-invalid @enderror" id="quantity" name="quantity" value="{{ old('quantity') }}" required min="1">
+                        <input type="number" class="form-control @error('quantity') is-invalid @enderror" id="quantity" name="quantity" value="{{ old('quantity', 1) }}" required min="1">
                         @error('quantity')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -106,6 +109,14 @@
     document.getElementById('product_id').addEventListener('change', function() {
         // Trigger change event pada type untuk memvalidasi stok
         document.getElementById('type').dispatchEvent(new Event('change'));
+    });
+
+    // Tambahan: Trigger event saat halaman pertama kali dimuat
+    // untuk menangani kasus produk sudah terpilih dari QR code atau error validasi
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('product_id').value) {
+            document.getElementById('type').dispatchEvent(new Event('change'));
+        }
     });
 </script>
 @endsection
